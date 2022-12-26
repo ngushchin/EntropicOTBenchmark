@@ -112,6 +112,8 @@ def download_benchmark_files():
     
 def get_benchmark_samplers(batch_size, eps, A, glow_device, samples_device, download=False):
     if download:
+        if not os.path.exists("../data"):
+            os.mkdir("../data")
         download_benchmark_files()
 
     X_test_sampler = load_input_test_anime_dataset(eps=eps, A=A, batch_size=batch_size, device=samples_device)

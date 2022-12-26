@@ -165,8 +165,8 @@ class GaussianBenchmark:
         
         assert dim in {2, 4, 8, 16, 32, 64, 128}
         
-        mu_prior_scales = {2:10, 4:10, 8:4, 16:3, 32:3, 64:2, 128:1}
-        prior_scales = {2:5, 4:5, 8:5, 16:5, 32:3, 64:3, 128:1}
+        mu_prior_scales = {2:10, 4:10, 8:4, 16:3, 32:3, 64:2, 128:1.5}
+        prior_scales = {2:5, 4:5, 8:5, 16:5, 32:3, 64:3, 128:1.5}
         
         mu_prior_scale = mu_prior_scales[dim]
         prior_scale = prior_scales[dim]

@@ -181,6 +181,39 @@ def plot_random_sde_images(X_sampler, Y_sampler, T, n_samples=4, gray=False):
     return plot_fixed_sde_images(X, Y, T, n_samples, gray)
 
 
+def plot_fixed_images(X, Y, T, n_samples=4, gray=False):
+    freeze(T);
+    with torch.no_grad():
+        T_X = torch.stack([T(X) for i in range(n_samples)], dim=0)
+        c, h, w = X.shape[1:]
+        imgs = torch.cat([X[None, :], T_X, Y[None, :]]).reshape(-1, c, h, w).to('cpu').permute(0,2,3,1).mul(0.5).add(0.5).numpy().clip(0,1)
+
+    fig, axes = plt.subplots(2+n_samples, 10, figsize=(15, 9), dpi=150)
+    
+    for i, ax in enumerate(axes.flatten()):
+        if not gray:
+            ax.imshow(imgs[i])
+        else:
+            ax.imshow(imgs[i], cmap='gray', vmin=0, vmax=1)
+        ax.get_xaxis().set_visible(False)
+        ax.set_yticks([])
+        
+    axes[0, 0].set_ylabel('X', fontsize=24)
+    for i in range(n_samples):
+        axes[i+1, 0].set_ylabel('T(X)', fontsize=24)
+    axes[-1, 0].set_ylabel('Y', fontsize=24)
+    
+    fig.tight_layout(pad=0.001)
+    torch.cuda.empty_cache(); gc.collect()
+    return fig, axes
+
+
+def plot_random_images(X_sampler, Y_sampler, T, n_samples=4, gray=False):
+    X, Y = X_sampler.sample(10), Y_sampler.sample(10)
+    
+    return plot_fixed_images(X, Y, T, n_samples, gray)
+
+
 def plot_fixed_sde_trajectories(X, Y, T, n_steps_to_show=10, n_steps=10, gray=False):
     freeze(T);
     

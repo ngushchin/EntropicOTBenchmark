@@ -1,3 +1,5 @@
+import gdown
+import pickle
 import torch
 import numpy as np
 
@@ -12,7 +14,7 @@ from torch.distributions.multivariate_normal import MultivariateNormal
 from sklearn.decomposition import PCA
 from scipy.stats import ortho_group
 from scipy.linalg import sqrtm, inv
-
+from zipfile import ZipFile
 
 
 def symmetrize(X):
@@ -39,6 +41,9 @@ class GaussianMixture:
     
         return sample.to(self.device), chosen_gaussians
     
+    def set_device(self, device):
+        self.device = device
+    
     def get_params(self):
         return {"probs": torch.clone(self.probs), "mu": torch.clone(self.mu),
                 "sigma": torch.clone(self.sigma), "sqrt_sigma": torch.clone(self.sqrt_sigma)}
@@ -62,7 +67,7 @@ class ConditionalGaussianMixture:
         dim = self.A.shape[-1]
         indexes = np.arange(self.probs.shape[0])
         log_p = [
-            torch.log(prob) + distr.log_prob(x[:, 0]) for prob, distr in zip(self.probs, self.potential_distributions)
+            torch.log(prob.to(self.device)) + distr.log_prob(x[:, 0]) for prob, distr in zip(self.probs, self.potential_distributions)
         ]
         log_p = torch.stack(log_p, dim=1)
         ps = softmax(log_p, dim=-1)
@@ -70,27 +75,33 @@ class ConditionalGaussianMixture:
         chosen_gaussians = []
         for p in ps:
             chosen_gaussians.append(
-                torch.tensor(np.random.choice(indexes, size=samples_per_each_x, replace=True, p=p.numpy()))
+                torch.tensor(np.random.choice(indexes, size=samples_per_each_x, replace=True, p=p.cpu().numpy()))
             )
         chosen_gaussians = torch.stack(chosen_gaussians, dim=0)
         
-        mask = chosen_gaussians == torch.arange(len(self.probs))
+        mask = (chosen_gaussians == torch.arange(len(self.probs))).to(self.device)
         
-        chosen_A = self.A.expand(mask.shape[0], mask.shape[1], self.A.shape[1], self.A.shape[1])
+        chosen_A = self.A.expand(mask.shape[0], mask.shape[1], self.A.shape[1], self.A.shape[1]).to(self.device)
         chosen_A = chosen_A[mask].reshape(batch_size, samples_per_each_x, *self.A.shape[1:])
         
-        chosen_sqrt_A = self.sqrt_A.expand(mask.shape[0], mask.shape[1], self.sqrt_A.shape[1], self.sqrt_A.shape[1])
+        chosen_sqrt_A = self.sqrt_A.expand(mask.shape[0], mask.shape[1], self.sqrt_A.shape[1], self.sqrt_A.shape[1]).to(self.device)
         chosen_sqrt_A = chosen_sqrt_A[mask].reshape(batch_size, samples_per_each_x, *self.sqrt_A.shape[1:])
         
-        chosen_B = self.B.expand(mask.shape[0], mask.shape[1], self.B.shape[1])
+        chosen_B = self.B.expand(mask.shape[0], mask.shape[1], self.B.shape[1]).to(self.device)
         chosen_B = chosen_B[mask].reshape(batch_size, samples_per_each_x, *self.B.shape[1:])
         
         mu = (chosen_A@x[:, :, :, None])[:, :, :, 0] + chosen_B
         sigma = chosen_sqrt_A*np.sqrt(self.eps)
         
-        sample = (sigma@torch.randn(batch_size, samples_per_each_x, dim, 1))[:, :, :, 0] + mu
+        sample = (sigma@torch.randn(batch_size, samples_per_each_x, dim, 1).to(self.device))[:, :, :, 0] + mu
         
         return sample.to(self.device), chosen_gaussians
+    
+    def set_device(self, device):
+        self.device = device
+        self.potential_distributions = [
+            MultivariateNormal(distr.loc.to(device), distr.covariance_matrix.to(device)) for distr in self.potential_distributions
+        ]
     
     def get_params(self):
         return {"probs": torch.clone(self.probs), "A": torch.clone(self.A),
@@ -186,13 +197,38 @@ class GaussianBenchmark:
 
         mus, sigmas, sqrt_sigmas = initialize_gaussians(n_gaussians=n_gaussians, DIM=dim, mu_prior_scale=mu_prior_scale, seed=1)
         probs = (1/n_gaussians)*torch.ones(n_gaussians)
-        original_distr = GaussianMixture(probs, mus, sigmas, sqrt_sigmas, device)
+        self.original_distr = GaussianMixture(probs, mus, sigmas, sqrt_sigmas, device)
 
         n_gaussians = 5
         probs = (1/n_gaussians)*torch.ones(n_gaussians)
-        conditional_distr = create_conditional_distr(probs=probs, DIM=dim, seed=0, eps=eps, prior_scale=prior_scale, device=device)
+        self.conditional_distr = create_conditional_distr(probs=probs, DIM=dim, seed=0, eps=eps, prior_scale=prior_scale, device=device)
 
 #         target_distr = create_target_distribution(original_distr, conditional_distr, eps=eps, device=device)
-        target_distr = TargetDistribution(original_distr, conditional_distr)
-        self.X_sampler = original_distr
-        self.Y_sampler = target_distr
+        self.target_distr = TargetDistribution(self.original_distr, self.conditional_distr)
+        self.X_sampler = self.original_distr
+        self.Y_sampler = self.target_distr
+        
+
+def download_gaussian_benchmark_files():
+    urls = {
+        "gaussian_benchmark.zip": "https://drive.google.com/uc?id=1sHliV1v32cSLCvORjEwsL650q_2OGb96",
+    }
+    for name, url in urls.items():
+        gdown.download(url, f"../data/{name}", quiet=False)
+        
+    with ZipFile("../data/gaussian_benchmark.zip", 'r') as zip_ref:
+        zip_ref.extractall("..")
+        
+        
+def get_gaussian_benchmark(dim, eps, device, download=False):
+    if download:
+        download_gaussian_benchmark_files()
+
+    with open(f"../data/gaussian_benchmark_dim_{dim}_eps_{eps}.pkl", "rb") as f:
+        benchmark = pickle.load(f)
+        
+    benchmark.original_distr.set_device(device)
+    benchmark.conditional_distr.set_device(device)
+    
+    return benchmark
+    

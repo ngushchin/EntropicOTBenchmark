@@ -110,7 +110,7 @@ def download_benchmark_files():
         gdown.download(url, f"../data/{name}", quiet=False)
 
     
-def get_benchmark_samplers(batch_size, eps, A, glow_device, samples_device, download=False):
+def get_anime_benchmark(batch_size, eps, A, glow_device, samples_device, download=False):
     if download:
         if not os.path.exists("../data"):
             os.mkdir("../data")

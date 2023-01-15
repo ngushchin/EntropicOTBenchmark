@@ -55,9 +55,9 @@ class BehcnmarkGlowSampler:
         return 2*self.model.module.reverse(z_sample).to(self.samples_device)
     
     @torch.no_grad()
-    def sample_degraded_images(self, batch_size, temp=0.7, A=0.9999, eps=0.01):
+    def sample_degraded_images(self, batch_size, temp=0.7, eps=0.01):
         gen_images = 0.5*self.sample_images(batch_size, temp).to(self.samples_device)
-        samples = 2*(A*gen_images + np.sqrt((eps*A))*torch.randn_like(gen_images).to(self.samples_device))
+        samples = 2*(gen_images + np.sqrt((eps))*torch.randn_like(gen_images).to(self.samples_device))
 
         return samples.to(self.samples_device)
     
@@ -88,8 +88,8 @@ def load_output_test_anime_dataset(batch_size=64, shuffle=True, device='cuda'):
     return sampler
 
 
-def load_input_test_anime_dataset(eps, A, batch_size=64, shuffle=True, device='cuda'):
-    path = f"../data/glow_generated_degrated_images_eps_{eps}_A_{A}.torch"
+def load_input_test_anime_dataset(eps, batch_size=64, shuffle=True, device='cuda'):
+    path = f"../data/glow_generated_degrated_images_eps_{eps}.torch"
     images = torch.load(path)*2 - 1
     dataset = TensorDataset(images, torch.zeros_like(images))
     sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=8, batch_size=batch_size), device)
@@ -110,18 +110,18 @@ def download_benchmark_files():
         gdown.download(url, f"../data/{name}", quiet=False)
 
     
-def get_anime_benchmark(batch_size, eps, A, glow_device, samples_device, download=False):
+def get_anime_benchmark(batch_size, eps, glow_device, samples_device, download=False):
     if download:
         if not os.path.exists("../data"):
             os.mkdir("../data")
         download_benchmark_files()
 
-    X_test_sampler = load_input_test_anime_dataset(eps=eps, A=A, batch_size=batch_size, device=samples_device)
+    X_test_sampler = load_input_test_anime_dataset(eps=eps, batch_size=batch_size, device=samples_device)
     Y_test_sampler = load_output_test_anime_dataset(batch_size=batch_size, device=samples_device)
 
     X_Y_sampler = BehcnmarkGlowSampler(glow_device, samples_device)
 
-    X_sampler = FunctionSampler(lambda batch_size: X_Y_sampler.sample_degraded_images(batch_size, eps=eps, A=A),
+    X_sampler = FunctionSampler(lambda batch_size: X_Y_sampler.sample_degraded_images(batch_size, eps=eps),
                                device=samples_device)
     Y_sampler = FunctionSampler(X_Y_sampler.sample_images,
                                device=samples_device)

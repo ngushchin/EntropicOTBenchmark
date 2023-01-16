@@ -25,11 +25,11 @@ import gc
 
 def load_dataset(name, path, img_size=64, batch_size=64, shuffle=True, device='cuda'):
     if name == "glow_generated_test":
-        images = torch.load(path)*2 - 1
+        images = torch.load(path)
         dataset = TensorDataset(images, torch.zeros_like(images))
         sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=8, batch_size=batch_size), device)
     elif name == "glow_generated_degraded_test":
-        images = torch.load(path)*2 - 1
+        images = torch.load(path)
         dataset = TensorDataset(images, torch.zeros_like(images))
         sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=8, batch_size=batch_size), device)
 

@@ -81,7 +81,7 @@ class AnimeBenchmark:
         
 def load_output_test_anime_dataset(batch_size=64, shuffle=True, device='cuda'):
     path = "../data/glow_generated_images.torch"
-    images = torch.load(path)*2 - 1
+    images = torch.load(path)
     dataset = TensorDataset(images, torch.zeros_like(images))
     sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=8, batch_size=batch_size), device)
     
@@ -90,7 +90,7 @@ def load_output_test_anime_dataset(batch_size=64, shuffle=True, device='cuda'):
 
 def load_input_test_anime_dataset(eps, batch_size=64, shuffle=True, device='cuda'):
     path = f"../data/glow_generated_degrated_images_eps_{eps}.torch"
-    images = torch.load(path)*2 - 1
+    images = torch.load(path)
     dataset = TensorDataset(images, torch.zeros_like(images))
     sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=8, batch_size=batch_size), device)
     
@@ -101,10 +101,10 @@ def download_benchmark_files():
     urls = {
         "glow_model.pt": "https://drive.google.com/uc?id=19zI6OH48v0Z5rQuiCJesZQK_hvpJipZb",
         "glow_generated_images.torch": "https://drive.google.com/uc?id=1varC4Zjeff-j9iEP9qmVYygTSc2g5iJJ",
-        "glow_generated_degrated_images_eps_0.1.torch": "https://drive.google.com/uc?id=126GVodokBty493Z28fWsTVZOGcmNLZNL",
-        "glow_generated_degrated_images_eps_1.torch": "https://drive.google.com/uc?id=11TaagsJ4EBlwz6FVcVNxafPpqdgzL2WF",
-        "glow_generated_degrated_images_eps_10.torch": "https://drive.google.com/uc?id=1gpMFQNJ0KBgT-REvr7zA9GZtzyP51HWg",
-        "glow_generated_degrated_images_eps_100.torch": "https://drive.google.com/uc?id=1qYdQC8UsDNE2gmOY1G2sxwJSWULKwcQ-",
+        "glow_generated_degrated_images_eps_0.1_A_1.torch": "https://drive.google.com/uc?id=126GVodokBty493Z28fWsTVZOGcmNLZNL",
+        "glow_generated_degrated_images_eps_1_A_1.torch": "https://drive.google.com/uc?id=11TaagsJ4EBlwz6FVcVNxafPpqdgzL2WF",
+        "glow_generated_degrated_images_eps_10_A_1.torch": "https://drive.google.com/uc?id=1gpMFQNJ0KBgT-REvr7zA9GZtzyP51HWg",
+        "glow_generated_degrated_images_eps_100_A_1.torch": "https://drive.google.com/uc?id=1qYdQC8UsDNE2gmOY1G2sxwJSWULKwcQ-",
     }
     for name, url in urls.items():
         gdown.download(url, f"../data/{name}", quiet=False)

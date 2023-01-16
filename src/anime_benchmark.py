@@ -56,8 +56,8 @@ class BehcnmarkGlowSampler:
     
     @torch.no_grad()
     def sample_degraded_images(self, batch_size, temp=0.7, eps=0.01):
-        gen_images = 0.5*self.sample_images(batch_size, temp).to(self.samples_device)
-        samples = 2*(gen_images + np.sqrt((eps))*torch.randn_like(gen_images).to(self.samples_device))
+        gen_images = self.sample_images(batch_size, temp).to(self.samples_device)
+        samples = gen_images + np.sqrt((eps))*torch.randn_like(gen_images).to(self.samples_device)
 
         return samples.to(self.samples_device)
     

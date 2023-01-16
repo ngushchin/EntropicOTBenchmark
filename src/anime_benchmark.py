@@ -101,10 +101,10 @@ def download_benchmark_files():
     urls = {
         "glow_model.pt": "https://drive.google.com/uc?id=19zI6OH48v0Z5rQuiCJesZQK_hvpJipZb",
         "glow_generated_images.torch": "https://drive.google.com/uc?id=1varC4Zjeff-j9iEP9qmVYygTSc2g5iJJ",
-        "glow_generated_degrated_images_eps_0.1_1.torch": "https://drive.google.com/uc?id=126GVodokBty493Z28fWsTVZOGcmNLZNL",
-        "glow_generated_degrated_images_eps_1_1.torch": "https://drive.google.com/uc?id=11TaagsJ4EBlwz6FVcVNxafPpqdgzL2WF",
-        "glow_generated_degrated_images_eps_10_1.torch": "https://drive.google.com/uc?id=1gpMFQNJ0KBgT-REvr7zA9GZtzyP51HWg",
-        "glow_generated_degrated_images_eps_100_1.torch": "https://drive.google.com/uc?id=1qYdQC8UsDNE2gmOY1G2sxwJSWULKwcQ-",
+        "glow_generated_degrated_images_eps_0.1.torch": "https://drive.google.com/uc?id=126GVodokBty493Z28fWsTVZOGcmNLZNL",
+        "glow_generated_degrated_images_eps_1.torch": "https://drive.google.com/uc?id=11TaagsJ4EBlwz6FVcVNxafPpqdgzL2WF",
+        "glow_generated_degrated_images_eps_10.torch": "https://drive.google.com/uc?id=1gpMFQNJ0KBgT-REvr7zA9GZtzyP51HWg",
+        "glow_generated_degrated_images_eps_100.torch": "https://drive.google.com/uc?id=1qYdQC8UsDNE2gmOY1G2sxwJSWULKwcQ-",
     }
     for name, url in urls.items():
         gdown.download(url, f"../data/{name}", quiet=False)

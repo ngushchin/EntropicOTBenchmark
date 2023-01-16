@@ -69,3 +69,9 @@ def latent_langevien_step(z_vector, condition_images, glow_model,
         new_z_vector = torch.clone(z_vector).detach() + grad*delta_time + np.sqrt(2*delta_time)*noise
         
     return new_z_vector
+
+
+def glow_log_p(inp, model, temperature=0.7):
+    z_list = model(inp)[2]
+    z_vector = tensor_list_to_vector(z_list)
+    return -1/(2*temperature**2)*(z_vector.square().sum(dim=(1,)))

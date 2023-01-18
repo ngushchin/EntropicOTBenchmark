@@ -133,7 +133,7 @@ def download_benchmark_files():
         gdown.download(url, f"../data/{name}", quiet=False)
 
     
-def get_anime_benchmark(batch_size, eps, glow_device, samples_device, download=False, num_workers=8):
+def get_anime_benchmark(batch_size, eps, glow_device, samples_device, download=False, use_pairs=False, num_workers=8):
     if download:
         if not os.path.exists("../data"):
             os.mkdir("../data")
@@ -141,7 +141,8 @@ def get_anime_benchmark(batch_size, eps, glow_device, samples_device, download=F
 
     X_test_sampler = load_input_test_anime_dataset(eps=eps, batch_size=batch_size, device=samples_device, num_workers=num_workers)
     Y_test_sampler = load_output_test_anime_dataset(batch_size=batch_size, device=samples_device, num_workers=num_workers)
-    X_Y_test_sampler = load_pairs_test_anime_dataset(eps=eps, batch_size=batch_size, device=samples_device, num_workers=num_workers)
+    if use_pairs:
+        X_Y_test_sampler = load_pairs_test_anime_dataset(eps=eps, batch_size=batch_size, device=samples_device, num_workers=num_workers)
 
     glow_sampler = BehcnmarkGlowSampler(glow_device, samples_device)
 
@@ -149,7 +150,11 @@ def get_anime_benchmark(batch_size, eps, glow_device, samples_device, download=F
                                device=samples_device)
     Y_sampler = FunctionSampler(glow_sampler.sample_images,
                                device=samples_device)
-    X_Y_sampler = FunctionSampler(lambda batch_size: glow_sampler.sample_pair_image_and_degraded_image(batch_size, eps=eps),
-                               device=samples_device, n_outputs=2)
+    if use_pairs:
+        X_Y_sampler = FunctionSampler(lambda batch_size: glow_sampler.sample_pair_image_and_degraded_image(batch_size, eps=eps),
+                                   device=samples_device, n_outputs=2)
     
-    return AnimeBenchmark(X_sampler, Y_sampler, X_test_sampler, Y_test_sampler, X_Y_sampler, X_Y_test_sampler)
+    if use_pairs:
+        return AnimeBenchmark(X_sampler, Y_sampler, X_test_sampler, Y_test_sampler, X_Y_sampler, X_Y_test_sampler)
+    
+    return AnimeBenchmark(X_sampler, Y_sampler, X_test_sampler, Y_test_sampler, None, None)

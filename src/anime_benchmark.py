@@ -83,28 +83,39 @@ class FunctionSampler:
 
 
 class AnimeBenchmark:
-    def __init__(self, X_sampler, Y_sampler, X_test_sampler, Y_test_sampler, X_Y_sampler):
+    def __init__(self, X_sampler, Y_sampler, X_test_sampler, Y_test_sampler, X_Y_sampler, X_Y_test_sampler):
         self.X_sampler = X_sampler
         self.Y_sampler = Y_sampler
         self.X_test_sampler = X_test_sampler
         self.Y_test_sampler = Y_test_sampler
         self.X_Y_sampler = X_Y_sampler
+        self.X_Y_test_sampler = X_Y_test_sampler
 
         
-def load_output_test_anime_dataset(batch_size=64, shuffle=True, device='cuda'):
+def load_output_test_anime_dataset(batch_size=64, shuffle=True, device='cuda', num_workers=8):
     path = "../data/glow_generated_images.torch"
     images = torch.load(path)
     dataset = TensorDataset(images, torch.zeros_like(images))
-    sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=8, batch_size=batch_size), device)
+    sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size), device)
     
     return sampler
 
 
-def load_input_test_anime_dataset(eps, batch_size=64, shuffle=True, device='cuda'):
+def load_input_test_anime_dataset(eps, batch_size=64, shuffle=True, device='cuda', num_workers=8):
     path = f"../data/glow_generated_degrated_images_eps_{eps}.torch"
     images = torch.load(path)
     dataset = TensorDataset(images, torch.zeros_like(images))
-    sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=8, batch_size=batch_size), device)
+    sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size), device)
+    
+    return sampler
+
+
+def load_pairs_test_anime_dataset(eps, batch_size=64, shuffle=True, device='cuda', num_workers=8):
+    path = f"../data/glow_generated_pairs_images_eps_{eps}.torch"
+    image_pairs = torch.load(path)
+    X, Y = image_pairs[0], image_pairs[1]
+    dataset = TensorDataset(X, Y)
+    sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size), device, sample_Y=True)
     
     return sampler
 
@@ -122,14 +133,15 @@ def download_benchmark_files():
         gdown.download(url, f"../data/{name}", quiet=False)
 
     
-def get_anime_benchmark(batch_size, eps, glow_device, samples_device, download=False):
+def get_anime_benchmark(batch_size, eps, glow_device, samples_device, download=False, num_workers=8):
     if download:
         if not os.path.exists("../data"):
             os.mkdir("../data")
         download_benchmark_files()
 
-    X_test_sampler = load_input_test_anime_dataset(eps=eps, batch_size=batch_size, device=samples_device)
-    Y_test_sampler = load_output_test_anime_dataset(batch_size=batch_size, device=samples_device)
+    X_test_sampler = load_input_test_anime_dataset(eps=eps, batch_size=batch_size, device=samples_device, num_workers=num_workers)
+    Y_test_sampler = load_output_test_anime_dataset(batch_size=batch_size, device=samples_device, num_workers=num_workers)
+    X_Y_test_sampler = load_pairs_test_anime_dataset(eps=eps, batch_size=batch_size, device=samples_device, num_workers=num_workers)
 
     glow_sampler = BehcnmarkGlowSampler(glow_device, samples_device)
 
@@ -140,4 +152,4 @@ def get_anime_benchmark(batch_size, eps, glow_device, samples_device, download=F
     X_Y_sampler = FunctionSampler(lambda batch_size: glow_sampler.sample_pair_image_and_degraded_image(batch_size, eps=eps),
                                device=samples_device, n_outputs=2)
     
-    return AnimeBenchmark(X_sampler, Y_sampler, X_test_sampler, Y_test_sampler, X_Y_sampler)
+    return AnimeBenchmark(X_sampler, Y_sampler, X_test_sampler, Y_test_sampler, X_Y_sampler, X_Y_test_sampler)

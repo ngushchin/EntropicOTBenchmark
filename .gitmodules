@@ -1,0 +1,4 @@
+[submodule "baselines/ENOT"]
+	path = baselines/ENOT
+	url = https://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@github.com/ngushchin/ENOT.git
+	branch = eot_benchmark

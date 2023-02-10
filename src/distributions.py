@@ -37,7 +37,10 @@ class LoaderSampler(Sampler):
         self.loader = loader
         self.it = iter(self.loader)
         
-    def sample(self, size=5):
+    def sample(self, size=None):
+        if size is None:
+            size = self.loader.batch_size
+        
         assert size <= self.loader.batch_size
         try:
             batch, _ = next(self.it)

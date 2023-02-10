@@ -1,3 +1,6 @@
+import os, sys
+sys.path.append("..")
+
 import gdown
 import os
 import torch
@@ -5,10 +8,10 @@ import numpy as np
 
 from zipfile import ZipFile
 from scipy.stats import ortho_group
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 from .rotated_gaussian_analytical_solution import get_D_sigma, get_C_sigma, get_optimal_plan_covariance 
-
+from src.distributions import LoaderSampler
 
 def initialize_random_rotated_gaussian(eigenvalues, seed=42):
     np.random.seed(seed)
@@ -67,10 +70,63 @@ def download_rotated_gaussian_benchmark_files(path):
         
     with ZipFile(os.path.join(path, "rotated_gaussians.zip"), 'r') as zip_ref:
         zip_ref.extractall("..")
+        
 
+def get_rotated_gaussian_dataset(input_or_target, dim, benchmark_data_path, device="cpu", download=False):
+    assert input_or_target in ["input", "target"]
+    assert dim in [2, 4, 8, 16, 32, 64, 128]
+        
+    if download:
+        download_rotated_gaussian_benchmark_files(benchmark_data_path)
+    
+    file_name = (f"rotated_gaussian_{dim}_weight_X.torch" 
+                 if input_or_target == "input" else f"rotated_gaussian_{dim}_weight_Y.torch"
+                )
+    
+    return RotatedGaussianDataset.load_from_tensor(
+        os.path.join(benchmark_data_path, "rotated_gaussians", file_name),
+        device=device)
+
+
+def get_rotated_gaussian_sampler(input_or_target, dim, batch_size, benchmark_data_path,
+                                 device="cpu", download=False):
+    assert input_or_target in ["input", "target"]
+    assert dim in [2, 4, 8, 16, 32, 64, 128]
+    
+    dataset = get_rotated_gaussian_dataset(input_or_target, dim, benchmark_data_path, device, download)
+    return LoaderSampler(DataLoader(dataset, shuffle=False, num_workers=8, batch_size=batch_size), device)
+
+
+def get_rotated_gaussian_benchmark_stats(dim, eps, benchmark_data_path, device="cpu", download=False):
+    assert dim in [2, 4, 8, 16, 32, 64, 128]
+        
+    if download:
+        download_rotated_gaussian_benchmark_files(benchmark_data_path)
+
+    X_dataset = RotatedGaussianDataset.load_from_tensor(
+        os.path.join(benchmark_data_path, "rotated_gaussians", f"rotated_gaussian_{dim}_weight_X.torch"),
+        device=device
+    )
+    Y_dataset = RotatedGaussianDataset.load_from_tensor(
+        os.path.join(benchmark_data_path, "rotated_gaussians", f"rotated_gaussian_{dim}_weight_Y.torch"),
+        device=device
+    )
+    
+    covariance_X = X_dataset.sigma.cpu().numpy()
+    covariance_Y = Y_dataset.sigma.cpu().numpy()
+        
+    mu_X = np.zeros(covariance_X.shape[0])
+    mu_Y = np.zeros(covariance_X.shape[0])
+    
+    optimal_plan_mu = np.zeros(covariance_X.shape[0]*2)
+    optimal_plan_covariance = get_optimal_plan_covariance(covariance_X, covariance_Y, eps)
+    
+    return mu_X, mu_Y, covariance_X, covariance_Y, optimal_plan_mu, optimal_plan_covariance
+    
 
 class RotatedGaussiansBenchmark:
-    def __init__(self, dim, eps, benchmark_data_path, device="cpu", download=True):
+    def __init__(self, dim, eps, benchmark_data_path, 
+                 make_samplers=False, device="cpu", download=True):
         assert dim in [2, 4, 8, 16, 32, 64, 128]
         
         if download:
@@ -84,6 +140,14 @@ class RotatedGaussiansBenchmark:
             os.path.join(benchmark_data_path, "rotated_gaussians", f"rotated_gaussian_{dim}_weight_Y.torch"),
             device=device
         )
+        
+        if make_samplers:
+            self.X_sampler = LoaderSampler(
+                DataLoader(self.X_dataset, shuffle=False, num_workers=8, batch_size=batch_size), device
+            )
+            self.Y_sampler = LoaderSampler(
+                DataLoader(self.X_dataset, shuffle=False, num_workers=8, batch_size=batch_size), device
+            )
         
         # computing stats for BW-UVP metric calculation
         self.covariance_X = self.X_dataset.sigma.cpu().numpy()

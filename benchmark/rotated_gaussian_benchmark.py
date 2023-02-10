@@ -11,7 +11,7 @@ from scipy.stats import ortho_group
 from torch.utils.data import Dataset, DataLoader
 
 from .rotated_gaussian_analytical_solution import get_D_sigma, get_C_sigma, get_optimal_plan_covariance 
-from src.distributions import LoaderSampler
+from .distributions import LoaderSampler
 
 def initialize_random_rotated_gaussian(eigenvalues, seed=42):
     np.random.seed(seed)

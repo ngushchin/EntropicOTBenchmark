@@ -4,9 +4,12 @@ from scipy.linalg import sqrtm
 import sklearn.datasets
 import random
 
+from torch.distributions.multivariate_normal import MultivariateNormal
+
 
 def symmetrize(X):
     return np.real((X + X.T) / 2)
+
 
 class Sampler:
     def __init__(
@@ -51,3 +54,16 @@ class LoaderSampler(Sampler):
             return self.sample(size)
             
         return batch[:size].to(self.device)
+    
+    
+class RotatedGaussisnLoaderSamplerWithDensity(LoaderSampler):
+    def __init__(self, loader, device='cuda'):
+        super(RotatedGaussisnLoaderSamplerWithDensity, self).__init__(loader, device)
+        covariance_matrix = self.loader.dataset.sigma
+        loc = torch.zeros(covariance_matrix.shape[0])
+        
+        self.distribution = MultivariateNormal(loc, covariance_matrix)
+        
+    def log_prob(self, samples):
+        return self.distribution.log_prob(samples)
+

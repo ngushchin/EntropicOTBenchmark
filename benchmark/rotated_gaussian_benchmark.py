@@ -11,7 +11,7 @@ from scipy.stats import ortho_group
 from torch.utils.data import Dataset, DataLoader
 
 from .rotated_gaussian_analytical_solution import get_D_sigma, get_C_sigma, get_optimal_plan_covariance 
-from .distributions import LoaderSampler
+from .distributions import LoaderSampler, RotatedGaussisnLoaderSamplerWithDensity
 
 def initialize_random_rotated_gaussian(eigenvalues, seed=42):
     np.random.seed(seed)
@@ -88,13 +88,19 @@ def get_rotated_gaussian_dataset(input_or_target, dim, benchmark_data_path, devi
         device=device)
 
 
-def get_rotated_gaussian_sampler(input_or_target, dim, batch_size, benchmark_data_path,
-                                 device="cpu", download=False):
+def get_rotated_gaussian_sampler(input_or_target, dim, batch_size, with_density, 
+                                 benchmark_data_path, device="cpu", download=False):
     assert input_or_target in ["input", "target"]
     assert dim in [2, 4, 8, 16, 32, 64, 128]
     
     dataset = get_rotated_gaussian_dataset(input_or_target, dim, benchmark_data_path, device, download)
-    return LoaderSampler(DataLoader(dataset, shuffle=False, num_workers=8, batch_size=batch_size), device)
+    
+    if with_density:
+        return RotatedGaussisnLoaderSamplerWithDensity(
+            DataLoader(dataset, shuffle=False, num_workers=8, batch_size=batch_size), device
+        )
+    else:
+        return LoaderSampler(DataLoader(dataset, shuffle=False, num_workers=8, batch_size=batch_size), device)
 
 
 def get_rotated_gaussian_benchmark_stats(dim, eps, benchmark_data_path, device="cpu", download=False):

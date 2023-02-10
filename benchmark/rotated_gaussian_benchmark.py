@@ -69,7 +69,7 @@ def download_rotated_gaussian_benchmark_files(path):
         gdown.download(url, os.path.join(path, f"{name}"), quiet=False)
         
     with ZipFile(os.path.join(path, "rotated_gaussians.zip"), 'r') as zip_ref:
-        zip_ref.extractall("..")
+        zip_ref.extractall(path)
         
 
 def get_rotated_gaussian_dataset(input_or_target, dim, benchmark_data_path, device="cpu", download=False):

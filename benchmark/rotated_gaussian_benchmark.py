@@ -149,10 +149,10 @@ class RotatedGaussiansBenchmark:
         
         if make_samplers:
             self.X_sampler = LoaderSampler(
-                DataLoader(self.X_dataset, shuffle=False, num_workers=8, batch_size=batch_size), device
+                DataLoader(self.X_dataset, shuffle=False, num_workers=0, batch_size=batch_size), device
             )
             self.Y_sampler = LoaderSampler(
-                DataLoader(self.X_dataset, shuffle=False, num_workers=8, batch_size=batch_size), device
+                DataLoader(self.X_dataset, shuffle=False, num_workers=0, batch_size=batch_size), device
             )
         
         # computing stats for BW-UVP metric calculation

@@ -12,6 +12,8 @@ from torch.utils.data import Dataset, DataLoader
 
 from .rotated_gaussian_analytical_solution import get_D_sigma, get_C_sigma, get_optimal_plan_covariance 
 from .distributions import LoaderSampler, RotatedGaussisnLoaderSamplerWithDensity
+from .auxiliary import get_data_home
+
 
 def initialize_random_rotated_gaussian(eigenvalues, seed=42):
     np.random.seed(seed)
@@ -61,7 +63,9 @@ class RotatedGaussianDataset(Dataset):
         torch.save(self.weight, path)
 
     
-def download_rotated_gaussian_benchmark_files(path):
+def download_rotated_gaussian_benchmark_files():
+    path = get_data_home()
+    
     urls = {
         "rotated_gaussians.zip": "https://drive.google.com/uc?id=1ZOUXFdkssPbGJb1jPhVK1dh8lkwu0Sx0",
     }
@@ -72,12 +76,13 @@ def download_rotated_gaussian_benchmark_files(path):
         zip_ref.extractall(path)
         
 
-def get_rotated_gaussian_dataset(input_or_target, dim, benchmark_data_path, device="cpu", download=False):
+def get_rotated_gaussian_dataset(input_or_target, dim, device="cpu", download=False):
     assert input_or_target in ["input", "target"]
     assert dim in [2, 4, 8, 16, 32, 64, 128]
+    benchmark_data_path = get_data_home()
         
     if download:
-        download_rotated_gaussian_benchmark_files(benchmark_data_path)
+        download_rotated_gaussian_benchmark_files()
     
     file_name = (f"rotated_gaussian_{dim}_weight_X.torch" 
                  if input_or_target == "input" else f"rotated_gaussian_{dim}_weight_Y.torch"
@@ -88,12 +93,15 @@ def get_rotated_gaussian_dataset(input_or_target, dim, benchmark_data_path, devi
         device=device)
 
 
-def get_rotated_gaussian_sampler(input_or_target, dim, batch_size, with_density, 
-                                 benchmark_data_path, device="cpu", download=False):
+def get_rotated_gaussian_sampler(input_or_target, dim, batch_size, with_density, device="cpu", download=False):
     assert input_or_target in ["input", "target"]
     assert dim in [2, 4, 8, 16, 32, 64, 128]
+    benchmark_data_path = get_data_home()
     
-    dataset = get_rotated_gaussian_dataset(input_or_target, dim, benchmark_data_path, device, download)
+    if download:
+        download_rotated_gaussian_benchmark_files()
+    
+    dataset = get_rotated_gaussian_dataset(input_or_target, dim, device, download)
     
     if with_density:
         return RotatedGaussisnLoaderSamplerWithDensity(
@@ -103,11 +111,12 @@ def get_rotated_gaussian_sampler(input_or_target, dim, batch_size, with_density,
         return LoaderSampler(DataLoader(dataset, shuffle=False, num_workers=8, batch_size=batch_size), device)
 
 
-def get_rotated_gaussian_benchmark_stats(dim, eps, benchmark_data_path, device="cpu", download=False):
+def get_rotated_gaussian_benchmark_stats(dim, eps, device="cpu", download=False):
     assert dim in [2, 4, 8, 16, 32, 64, 128]
+    benchmark_data_path = get_data_home()
         
     if download:
-        download_rotated_gaussian_benchmark_files(benchmark_data_path)
+        download_rotated_gaussian_benchmark_files()
 
     X_dataset = RotatedGaussianDataset.load_from_tensor(
         os.path.join(benchmark_data_path, "rotated_gaussians", f"rotated_gaussian_{dim}_weight_X.torch"),
@@ -131,12 +140,12 @@ def get_rotated_gaussian_benchmark_stats(dim, eps, benchmark_data_path, device="
     
 
 class RotatedGaussiansBenchmark:
-    def __init__(self, dim, eps, benchmark_data_path, 
-                 make_samplers=False, device="cpu", download=True):
+    def __init__(self, dim, eps, make_samplers=False, device="cpu", download=True):
         assert dim in [2, 4, 8, 16, 32, 64, 128]
+        benchmark_data_path = get_data_home()
         
         if download:
-            download_rotated_gaussian_benchmark_files(benchmark_data_path)
+            download_rotated_gaussian_benchmark_files()
         
         self.X_dataset = RotatedGaussianDataset.load_from_tensor(
             os.path.join(benchmark_data_path, "rotated_gaussians", f"rotated_gaussian_{dim}_weight_X.torch"),

@@ -114,7 +114,7 @@ def get_rotated_gaussian_sampler(input_or_target, dim, batch_size, with_density,
 def get_rotated_gaussian_benchmark_stats(dim, eps, device="cpu", download=False):
     assert dim in [2, 4, 8, 16, 32, 64, 128]
     benchmark_data_path = get_data_home()
-        
+    
     if download:
         download_rotated_gaussian_benchmark_files()
 

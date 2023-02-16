@@ -5,3 +5,6 @@
 [submodule "baselines/Chen"]
 	path = baselines/Chen
 	url = https://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@github.com/justkolesov/Chen.git
+[submodule "baselines/LSOT"]
+	path = baselines/LSOT
+	url = https://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@github.com/justkolesov/LSOT.git

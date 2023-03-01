@@ -1,120 +1,16 @@
+import os
+
 import torch
 import numpy as np
 # from .tools import freeze
 from scipy.linalg import sqrtm
+from .auxiliary import get_data_home
 
 import gc
 
+
 def symmetrize(X):
     return np.real((X + X.T) / 2)
-
-
-# def score_fitted_maps(benchmark, D, D_conj, size=4096):
-#     '''Estimates L2-UVP and cosine metrics for transport map by the gradients of potentials.'''
-#     X = benchmark.input_sampler.sample(size); X.requires_grad_(True)
-#     Y = benchmark.map_fwd(X, nograd=True); Y.requires_grad_(True)
-    
-#     freeze(D); freeze(D_conj)
-#     X_push = D.push_nograd(X)
-#     Y_inv = D_conj.push_nograd(Y)
-    
-#     with torch.no_grad():
-#         L2_UVP_fwd = 100 * (((Y - X_push) ** 2).sum(dim=1).mean() / benchmark.output_sampler.var).item()
-#         L2_UVP_inv = 100 * (((X - Y_inv) ** 2).sum(dim=1).mean() / benchmark.input_sampler.var).item()
-        
-#         cos_fwd = (((Y - X) * (X_push - X)).sum(dim=1).mean() / \
-#         (np.sqrt((2 * benchmark.cost) * ((X_push - X) ** 2).sum(dim=1).mean().item()))).item()
-#         cos_inv = (((X - Y) * (Y_inv - Y)).sum(dim=1).mean() / \
-#         (np.sqrt((2 * benchmark.cost) * ((Y_inv - Y) ** 2).sum(dim=1).mean().item()))).item()
-        
-#     gc.collect(); torch.cuda.empty_cache() 
-#     return L2_UVP_fwd, cos_fwd, L2_UVP_inv, cos_inv
-
-
-# def score_baseline_maps(benchmark, baseline='linear', size=4096):
-#     '''Estimates L2-UVP and cosine similarity metrics for the baseline transport map (identity, const or linear).'''
-#     assert baseline in ['identity', 'linear', 'constant']
-    
-#     X = benchmark.input_sampler.sample(size); X.requires_grad_(True)
-#     Y = benchmark.map_fwd(X, nograd=True)
-    
-#     with torch.no_grad():
-#         if baseline == 'linear':  
-#             X_push = benchmark.linear_map_fwd(X)
-#             Y_inv = benchmark.linear_map_inv(Y)
-#         elif baseline == 'constant':
-#             X_push = torch.tensor(
-#                 benchmark.output_sampler.mean.reshape(1, -1).repeat(size, 0),
-#                 dtype=torch.float32
-#             ).to(X)
-#             Y_inv = torch.tensor(
-#                 benchmark.input_sampler.mean.reshape(1, -1).repeat(size, 0),
-#                 dtype=torch.float32
-#             ).to(Y)
-#         elif baseline == 'identity':
-#             X_push = X
-#             Y_inv = Y
-
-#         if baseline == 'constant':
-#             L2_UVP_fwd, L2_UVP_inv = 100., 100.
-#         else:
-#             L2_UVP_fwd = 100 * (((Y - X_push) ** 2).sum(dim=1).mean() / benchmark.output_sampler.var).item()
-#             L2_UVP_inv = 100 * (((X - Y_inv) ** 2).sum(dim=1).mean() / benchmark.input_sampler.var).item()
-
-#         if baseline == 'identity':
-#             cos_fwd, cos_inv = 0., 0.
-#         else:
-#             cos_fwd = (((Y - X) * (X_push - X)).sum(dim=1).mean() / \
-#             (np.sqrt(2 * benchmark.cost * ((X_push - X) ** 2).sum(dim=1).mean().item()))).item()
-#             cos_inv = (((X - Y) * (Y_inv - Y)).sum(dim=1).mean() / \
-#             (np.sqrt(2 * benchmark.cost * ((Y_inv - Y) ** 2).sum(dim=1).mean().item()))).item()
-
-#     gc.collect(); torch.cuda.empty_cache() 
-#     return L2_UVP_fwd, cos_fwd, L2_UVP_inv, cos_inv
-
-# def metrics_to_dict(L2_UVP_fwd, cos_fwd, L2_UVP_inv, cos_inv):
-#     return dict(L2_UVP_fwd=L2_UVP_fwd, cos_fwd=cos_fwd, L2_UVP_inv=L2_UVP_inv, cos_inv=cos_inv)
-
-
-# # https://www.onurtunali.com/ml/2019/03/08/maximum-mean-discrepancy-in-machine-learning.html
-# def MMD(x, y, kernel, device, scale_factor):
-#     """Emprical maximum mean discrepancy. The lower the result
-#        the more evidence that distributions are the same.
-
-#     Args:
-#         x: first sample, distribution P
-#         y: second sample, distribution Q
-#         kernel: kernel type such as "multiscale" or "rbf"
-#     """
-#     xx, yy, zz = torch.mm(x, x.t()), torch.mm(y, y.t()), torch.mm(x, y.t())
-#     rx = (xx.diag().unsqueeze(0).expand_as(xx))
-#     ry = (yy.diag().unsqueeze(0).expand_as(yy))
-
-#     dxx = rx.t() + rx - 2. * xx # Used for A in (1)
-#     dyy = ry.t() + ry - 2. * yy # Used for B in (1)
-#     dxy = rx.t() + ry - 2. * zz # Used for C in (1)
-
-#     XX, YY, XY = (torch.zeros(xx.shape).to(device),
-#                   torch.zeros(xx.shape).to(device),
-#                   torch.zeros(xx.shape).to(device))
-
-#     if kernel == "multiscale":
-
-#         bandwidth_range = [elem*scale_factor for elem in [0.2, 0.5, 0.9, 1.3]]
-#         for a in bandwidth_range:
-#             XX += a**2 * (a**2 + dxx)**-1
-#             YY += a**2 * (a**2 + dyy)**-1
-#             XY += a**2 * (a**2 + dxy)**-1
-
-#     if kernel == "rbf":
-
-#         bandwidth_range = [elem*scale_factor for elem in [10, 15, 20, 50]]
-#         for a in bandwidth_range:
-#             XX += torch.exp(-0.5*dxx/a)
-#             YY += torch.exp(-0.5*dyy/a)
-#             XY += torch.exp(-0.5*dxy/a)
-
-#     return torch.mean(XX + YY - 2. * XY)
 
 
 def compute_BW_UVP_with_gt_stats(model_samples, true_samples_mu, true_samples_covariance):
@@ -142,3 +38,59 @@ def compute_BW_UVP_by_gt_samples(model_samples, true_samples):
     true_samples_mu = true_samples.mean(axis=0)
         
     return compute_BW_UVP_with_gt_stats(model_samples, true_samples_mu, true_samples_covariance)
+
+
+def calculate_mmd_kernels_for_mmd(x, y, kernel_width=1):
+    dxx = torch.cdist(x, x)
+    dyy = torch.cdist(y, y)
+    dxy = torch.cdist(x, y)
+
+    XX = torch.exp(-0.5*dxx/kernel_width)
+    YY = torch.exp(-0.5*dyy/kernel_width)
+    XY = torch.exp(-0.5*dxy/kernel_width)
+    
+    return XX, YY, XY
+
+
+def calculate_mmd(x, y, batch_size=1000, kernel_width=1):
+    same_sampler_pairs = 0
+    cross_sampler_pairs = 0
+    
+    xx_kernel = 0
+    yy_kernel = 0
+    xy_kernel = 0
+    
+    x = x[:(x.shape[0]//batch_size)*batch_size]
+    y = y[:(y.shape[0]//batch_size)*batch_size]
+    
+    first_batches = x.reshape(-1, batch_size, x.shape[-1])
+    second_batches = y.reshape(-1, batch_size, y.shape[-1])
+    
+    iterations = len(first_batches)
+        
+    for i in range(iterations):
+        for j in range(iterations):
+            first_batch = first_batches[i]
+            second_batch = second_batches[j]
+            
+            xx, yy, xy = calculate_mmd_kernels_for_mmd(first_batch, second_batch, kernel_width)
+            xx_kernel = xx_kernel + (xx.sum()) - (xx.diag().sum())
+            yy_kernel = yy_kernel + (yy.sum()) - (yy.diag().sum())
+            xy_kernel = xy_kernel + (xy.sum()) - (xy.diag().sum())
+            
+            batch_size = xx.shape[0]
+            same_sampler_pairs += batch_size*(batch_size-1)
+            cross_sampler_pairs += batch_size*(batch_size-1)
+        
+    return xx_kernel/same_sampler_pairs + yy_kernel/same_sampler_pairs - 2*xy_kernel/cross_sampler_pairs
+
+
+def calculate_gm_benchmark_normalized_mmd(x, y, dim, eps, batch_size=1000, kernel_width=1):
+    assert dim in [2, 4, 8, 16, 32, 64, 128]
+    assert eps in [0.1, 1, 1]
+    
+    path = os.path.join(get_data_home(), "gaussian_mixture_benchmark_data", f"scale_dim_{dim}_eps_{eps}.torch")
+    scale_factor = torch.load(path).item()
+    
+    return calculate_mmd(x, y, batch_size=batch_size, kernel_width=kernel_width)/scale_factor
+    

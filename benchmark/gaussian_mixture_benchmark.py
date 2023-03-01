@@ -144,6 +144,17 @@ class OutputSampler:
         
     def sample(self, n_samples: int =1):
         return self.conditional_plan.sample(self.gm.sample(n_samples))
+    
+    
+class PlanSampler:
+    def __init__(self, gm, conditional_plan):
+        self.gm = gm
+        self.conditional_plan = conditional_plan
+        
+    def sample(self, n_samples: int =1):
+        input_samples = self.gm.sample(n_samples)
+        output_samples = self.conditional_plan.sample(input_samples)
+        return input_samples, output_samples
         
         
 def get_guassian_mixture_benchmark_sampler(input_or_target: str, dim: int, eps: float,
@@ -173,4 +184,29 @@ def get_guassian_mixture_benchmark_sampler(input_or_target: str, dim: int, eps: 
         conditional_plan = ConditionalPlan(probs, mus, sigmas, eps)
         
         return OutputSampler(gm, conditional_plan)
+    
+    
+def get_guassian_mixture_benchmark_ground_truth_sampler(dim: int, eps: float, batch_size: int,
+                                                        device: str ="cpu", download: bool =False):
+    assert dim in [2, 4, 8, 16, 32, 64, 128]
+    assert eps in [0.1, 1, 10]
+    
+    if download:
+        download_gaussian_mixture_benchmark_files()
+        
+    benchmark_data_path = os.path.join(get_data_home(), "gaussian_mixture_benchmark_data")
+        
+    probs = torch.load(os.path.join(benchmark_data_path, f"input_probs_dim_{dim}.torch"))
+    mus = torch.load(os.path.join(benchmark_data_path, f"input_mus_dim_{dim}.torch"))
+    sigmas = torch.load(os.path.join(benchmark_data_path, f"input_sigmas_dim_{dim}.torch"))
+    
+    gm = GaussianMixture(probs, mus, sigmas)
+    
+    probs = torch.load(os.path.join(benchmark_data_path, f"potential_probs_dim_{dim}_eps_{eps}.torch"))
+    mus = torch.load(os.path.join(benchmark_data_path, f"potential_mus_dim_{dim}_eps_{eps}.torch"))
+    sigmas = torch.load(os.path.join(benchmark_data_path, f"potential_sigmas_dim_{dim}_eps_{eps}.torch"))
+
+    conditional_plan = ConditionalPlan(probs, mus, sigmas, eps)
+        
+    return PlanSampler(gm, conditional_plan)
     

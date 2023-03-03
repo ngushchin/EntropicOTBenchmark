@@ -50,7 +50,7 @@ class ConditionalCategoricalDistribution:
         self.gumbel_distribution = Gumbel(0, 1)
         
     def sample(self, log_probs: torch.tensor) -> torch.tensor:
-        gumbel_samples = self.gumbel_distribution.sample(log_probs.shape)
+        gumbel_samples = self.gumbel_distribution.sample(log_probs.shape).to(log_probs.device)
         return torch.argmax(gumbel_samples + log_probs, dim=1)
     
     

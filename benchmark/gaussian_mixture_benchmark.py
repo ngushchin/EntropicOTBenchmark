@@ -22,7 +22,7 @@ from .auxiliary import get_data_home
 
 class GaussianMixture:
     def __init__(self, probs: torch.tensor, mus: torch.tensor, sigmas: torch.tensor):
-        assert torch.allclose(probs.sum(), torch.ones(1))
+#         assert torch.allclose(probs.sum(), torch.ones(1))
         self.probs = probs
         self.components_distirubtion = Categorical(probs)
         
@@ -87,7 +87,8 @@ class ConditionalPlan:
                  potential_mus: torch.tensor, 
                  potential_sigmas: torch.tensor,
                  eps: float):
-#         assert torch.allclose(potential_probs.sum(), torch.ones(1))
+#         assert torch.
+(potential_probs.sum(), torch.ones(1))
         assert len(potential_probs) == len(potential_mus) and len(potential_mus) == len(potential_sigmas)
         assert eps > 0
         

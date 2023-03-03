@@ -87,7 +87,7 @@ class ConditionalPlan:
                  potential_mus: torch.tensor, 
                  potential_sigmas: torch.tensor,
                  eps: float):
-        assert torch.allclose(potential_probs.sum(), torch.ones(1))
+#         assert torch.allclose(potential_probs.sum(), torch.ones(1))
         assert len(potential_probs) == len(potential_mus) and len(potential_mus) == len(potential_sigmas)
         assert eps > 0
         

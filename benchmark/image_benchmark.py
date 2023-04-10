@@ -45,7 +45,7 @@ class GlowSampler:
         model = nn.DataParallel(model_single)
         self.model = model.to(glow_device)
         
-        self.model.load_state_dict(torch.load(glow_checkpoint_path))
+        self.model.load_state_dict(torch.load(glow_checkpoint_path, map_location=glow_device))
     
     @torch.no_grad()
     def sample_images(self, batch_size, temp=0.7):

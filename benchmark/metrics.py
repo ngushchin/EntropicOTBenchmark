@@ -41,9 +41,9 @@ def compute_BW_UVP_by_gt_samples(model_samples, true_samples):
 
 
 def calculate_rbf_mmd_kernels_for_mmd(x, y, kernel_width=1):
-    dxx = torch.cdist(x, x)
-    dyy = torch.cdist(y, y)
-    dxy = torch.cdist(x, y)
+    dxx = torch.cdist(x, x).square()
+    dyy = torch.cdist(y, y).square()
+    dxy = torch.cdist(x, y).square()
 
     XX = torch.exp(-0.5*dxx/kernel_width)
     YY = torch.exp(-0.5*dyy/kernel_width)
@@ -106,40 +106,217 @@ def calculate_mmd(x, y, batch_size=1000, kernel_type="rbf", kernel_width=1):
     return xx_kernel/same_sampler_pairs + yy_kernel/same_sampler_pairs - 2*xy_kernel/cross_sampler_pairs
 
 
-def calculate_gm_mmd(x, y, dim, eps, batch_size=1000):
+def calculate_gm_mmd(x, y, dim, eps, normalization_type, batch_size=1000):
+    assert normalization_type in ["indep_plan_rbf_kernel",
+                                  "indep_plan_rbf_kernel_dim_norm",
+                                  "indep_plan_rbf_distance_kernel",
+                                  "identity_rbf_kernel", 
+                                  "indentity_rbf_kernel_norm", 
+                                  "identity_distance_kernel"]
     assert dim in [2, 4, 8, 16, 32, 64, 128]
-    assert eps in [0.1, 1, 1]
+    assert eps in [0.1, 1, 10]
     
-    kernel_width=1
+    kernel_width = dim if "norm" in normalization_type else 1
+    kernel_type = "distance" if "distance_kernel" in normalization_type else "rbf"
+#     path = f"{normalization_type}_scale_dim_{dim}_eps_{eps}.torch"
     path = os.path.join(get_data_home(),
-                        "gaussian_mixture_benchmark_data",
-                        f"scale_dim_{dim}_eps_{eps}.torch")
+                    "gaussian_mixture_benchmark_data",
+                    f"{normalization_type}_scale_dim_{dim}_eps_{eps}.torch")
+    
     scale_factor = torch.load(path).item()
+    return (calculate_mmd(x, y, batch_size=batch_size, kernel_type=kernel_type, kernel_width=kernel_width)/scale_factor)*100
     
-    return (calculate_mmd(x, y, batch_size=batch_size, kernel_width=kernel_width)/scale_factor)*100
+#     if normalization_type == "indep_plan_rbf_kernel":
+#         kernel_type = "rbf"
+#         kernel_width = 1
+#         path = os.path.join(get_data_home(),
+#                             "gaussian_mixture_benchmark_data",
+#                             f"scale_dim_{dim}_eps_{eps}.torch")
+        
+        
+#     elif normalization_type == "indep_plan_rbf_kernel_dim_norm":
+#         kernel_type = "rbf
+#         kernel_width = dim
+#         path = os.path.join(get_data_home(),
+#                             "gaussian_mixture_benchmark_data",
+#                             f"scale_dim_{dim}_eps_{eps}_dim_normalized.torch")
+        
+#     elif normalization_type == "indep_plan_rbf_distance_kernel":
+#         kernel_type = "distance"
+#         path = os.path.join(get_data_home(),
+#                             "gaussian_mixture_benchmark_data",
+#                             f"scale_dim_{dim}_eps_{eps}_distance_kernel.torch")
+#         scale_factor = torch.load(path).item()
+        
+#     elif normalization_type == "identity_rbf_kernel":
+#         kernel_type = "rbf"
+#         kernel_width = 1
+#         path = os.path.join(get_data_home(),
+#                             "gaussian_mixture_benchmark_data",
+#                             f"scale_dim_{dim}_eps_{eps}.torch")
+    
+#     elif normalization_type == "indentity_rbf_kernel_norm":
+#         kernel_type = "rbf
+#         kernel_width = dim
+#         path = os.path.join(get_data_home(),
+#                             "gaussian_mixture_benchmark_data",
+#                             f"identity_scale_dim_{dim}_eps_{eps}_dim_normalized.torch")
+        
+#     elif normalization_type == "identity_distance_kernel":
+#         kernel_type = "distance"
+#         path = os.path.join(get_data_home(),
+#                             "gaussian_mixture_benchmark_data",
+#                             f"identity_scale_dim_{dim}_eps_{eps}_distance_kernel.torch")
+#         scale_factor = torch.load(path).item()
+#     kernel_width=1
+#     path = os.path.join(get_data_home(),
+#                         "gaussian_mixture_benchmark_data",
+#                         f"scale_dim_{dim}_eps_{eps}.torch")
+#     scale_factor = torch.load(path).item()
 
 
-def calculate_gm_mmd_dim_normalized(x, y, dim, eps, batch_size=1000):
-    assert dim in [2, 4, 8, 16, 32, 64, 128]
-    assert eps in [0.1, 1, 1]
+# def calculate_gm_mmd(x, y, dim, eps, batch_size=1000):
+#     assert dim in [2, 4, 8, 16, 32, 64, 128]
+#     assert eps in [0.1, 1, 10]
     
-    kernel_width=dim
-    path = os.path.join(get_data_home(),
-                        "gaussian_mixture_benchmark_data",
-                        f"scale_dim_{dim}_eps_{eps}_dim_normalized.torch")
-    scale_factor = torch.load(path).item()
+#     kernel_width=1
+#     path = os.path.join(get_data_home(),
+#                         "gaussian_mixture_benchmark_data",
+#                         f"scale_dim_{dim}_eps_{eps}.torch")
+#     scale_factor = torch.load(path).item()
     
-    return (calculate_mmd(x, y, batch_size=batch_size, kernel_width=kernel_width)/scale_factor)*100
+#     return (calculate_mmd(x, y, batch_size=batch_size, kernel_width=kernel_width)/scale_factor)*100
 
 
-def calculate_gm_mmd_distance_kernel(x, y, dim, eps, batch_size=1000):
-    assert dim in [2, 4, 8, 16, 32, 64, 128]
-    assert eps in [0.1, 1, 1]
+# def calculate_gm_mmd_dim_normalized(x, y, dim, eps, batch_size=1000):
+#     assert dim in [2, 4, 8, 16, 32, 64, 128]
+#     assert eps in [0.1, 1, 10]
     
-    path = os.path.join(get_data_home(),
-                        "gaussian_mixture_benchmark_data",
-                        f"scale_dim_{dim}_eps_{eps}_distance_kernel.torch")
-    scale_factor = torch.load(path).item()
+#     kernel_width=dim
+#     path = os.path.join(get_data_home(),
+#                         "gaussian_mixture_benchmark_data",
+#                         f"scale_dim_{dim}_eps_{eps}_dim_normalized.torch")
+#     scale_factor = torch.load(path).item()
     
-    return (calculate_mmd(x, y, batch_size=batch_size, kernel_type="distance")/scale_factor)*100
+#     return (calculate_mmd(x, y, batch_size=batch_size, kernel_width=kernel_width)/scale_factor)*100
+
+
+# def calculate_gm_mmd_distance_kernel(x, y, dim, eps, batch_size=1000):
+#     assert dim in [2, 4, 8, 16, 32, 64, 128]
+#     assert eps in [0.1, 1, 10]
+    
+#     path = os.path.join(get_data_home(),
+#                         "gaussian_mixture_benchmark_data",
+#                         f"scale_dim_{dim}_eps_{eps}_distance_kernel.torch")
+#     scale_factor = torch.load(path).item()
+    
+#     return (calculate_mmd(x, y, batch_size=batch_size, kernel_type="distance")/scale_factor)*100
+
+
+
+# dims = [2, 4, 8, 16, 32, 64, 128]
+# eps_array = [0.1, 1, 10]
+# batch_size = 1000
+# n_runs = 10
+# n_samples = 10000
+
+# independet_results = {}
+# independet_results_normilized_by_mmd = {}
+# independet_results_with_distance_kernel = {}
+
+# identity_results = {}
+# identity_results_normilized_by_mmd = {}
+# identity_results_with_distance_kernel = {}
+
+# for dim in dims:
+#     independet_results[dim] = {}
+#     independet_results_normilized_by_mmd[dim] = {}
+#     independet_results_with_distance_kernel[dim] = {}
+    
+#     identity_results[dim] = {}
+#     identity_results_normilized_by_mmd[dim] = {}
+#     identity_results_with_distance_kernel[dim] = {}
+    
+#     for eps in tqdm(eps_array):
+#         independet_result = []
+#         independet_result_normilized_by_mmd = []
+#         independet_result_with_distance_kernel = []
+        
+#         identity_result = []
+#         identity_result_normilized_by_mmd = []
+#         identity_result_with_distance_kernel = []
+        
+#         for run in range(n_runs):
+#             input_sampler = get_guassian_mixture_benchmark_sampler("input", dim=dim, eps=eps, batch_size=batch_size)
+#             output_sampler = get_guassian_mixture_benchmark_sampler("target", dim=dim, eps=eps, batch_size=batch_size)
+#             gt_sampler = get_guassian_mixture_benchmark_ground_truth_sampler(dim=dim, eps=eps, batch_size=batch_size)
+            
+#             x = input_sampler.sample(n_samples)
+#             y = output_sampler.sample(n_samples)
+
+#             independet_samples = torch.cat((x, y), dim=1)
+            
+#             x_gt, y_gt = gt_sampler.sample(n_samples)
+#             plan_gt_samples = torch.cat((x_gt, y_gt), dim=1)
+            
+#             independet_mmd = calculate_mmd(
+#                 independet_samples,
+#                 plan_gt_samples,
+#                 batch_size=batch_size,
+#                 kernel_width=1
+#             )
+            
+#             independet_mmd_normilized_by_mmd = calculate_mmd(
+#                 independet_samples,
+#                 plan_gt_samples,
+#                 batch_size=batch_size,
+#                 kernel_width=dim
+#             )
+            
+#             independet_mmd_with_distance_kernel = calculate_mmd(
+#                 independet_samples,
+#                 plan_gt_samples,
+#                 batch_size=batch_size,
+#                 kernel_type="distance"
+#             )
+            
+            
+#             identity_mmd = calculate_mmd(
+#                 x_gt,
+#                 y_gt,
+#                 batch_size=batch_size,
+#                 kernel_width=1
+#             )
+            
+#             identity_mmd_normilized_by_mmd = calculate_mmd(
+#                 x_gt,
+#                 y_gt,
+#                 batch_size=batch_size,
+#                 kernel_width=dim
+#             )
+            
+#             identity_mmd_with_distance_kernel = calculate_mmd(
+#                 x_gt,
+#                 y_gt,
+#                 batch_size=batch_size,
+#                 kernel_type="distance"
+#             )
+            
+#             independet_result.append(independet_mmd.item())
+#             independet_result_normilized_by_mmd.append(independet_mmd_normilized_by_mmd.item())
+#             independet_result_with_distance_kernel.append(independet_mmd_with_distance_kernel.item())
+            
+            
+#             identity_result.append(identity_mmd.item())
+#             identity_result_normilized_by_mmd.append(identity_mmd_normilized_by_mmd.item())
+#             identity_result_with_distance_kernel.append(identity_mmd_with_distance_kernel.item())
+            
+#         independet_results[dim][eps] = torch.tensor(independet_result)
+#         independet_results_normilized_by_mmd[dim][eps] = torch.tensor(independet_result_normilized_by_mmd)
+#         independet_results_with_distance_kernel[dim][eps] = torch.tensor(independet_result_with_distance_kernel)
+        
+        
+#         identity_results[dim][eps] = torch.tensor(identity_result)
+#         identity_results_normilized_by_mmd[dim][eps] = torch.tensor(identity_result_normilized_by_mmd)
+#         identity_results_with_distance_kernel[dim][eps] = torch.tensor(identity_result_with_distance_kernel)
     

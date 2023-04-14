@@ -114,7 +114,7 @@ def calculate_gm_mmd(x, y, dim, eps, normalization_type, batch_size=1000):
                                   "indentity_rbf_kernel_norm", 
                                   "identity_distance_kernel"]
     assert dim in [2, 4, 8, 16, 32, 64, 128]
-    assert eps in [0.1, 1, 10]
+    assert eps in [0.01, 0.1, 1, 10]
     
     kernel_width = dim if "norm" in normalization_type else 1
     kernel_type = "distance" if "distance_kernel" in normalization_type else "rbf"

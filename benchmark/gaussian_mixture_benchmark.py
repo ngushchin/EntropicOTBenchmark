@@ -21,8 +21,17 @@ from .auxiliary import get_data_home
 
 
 class GaussianMixture:
-    def __init__(self, probs: torch.tensor, mus: torch.tensor, sigmas: torch.tensor):
+    def __init__(self, probs: torch.tensor,
+                 mus: torch.tensor,
+                 sigmas: torch.tensor,
+                 device: str):
 #         assert torch.allclose(probs.sum(), torch.ones(1))
+        self.device = device
+    
+        probs = probs.to(device)
+        mus = mus.to(device)
+        sigmas = sigmas.to(device)
+    
         self.probs = probs
         self.components_distirubtion = Categorical(probs)
         
@@ -33,7 +42,7 @@ class GaussianMixture:
         self.dim = mus[0].shape[0]
         
     def sample(self, n_samples:int =1) -> torch.tensor:
-        components = self.components_distirubtion.sample(sample_shape=torch.Size((n_samples,)))
+        components = self.components_distirubtion.sample(sample_shape=torch.Size((n_samples,))).to(self.device)
         
         gaussian_samples = [
             gaussian_distribution.sample(sample_shape=torch.Size((n_samples,))) for gaussian_distribution in self.gaussians_distributions
@@ -86,12 +95,17 @@ class ConditionalPlan:
     def __init__(self, potential_probs: torch.tensor, 
                  potential_mus: torch.tensor, 
                  potential_sigmas: torch.tensor,
-                 eps: float):
+                 eps: float,
+                 device: str):
 #         assert torch.allclose(potential_probs.sum(), torch.ones(1))
         assert len(potential_probs) == len(potential_mus) and len(potential_mus) == len(potential_sigmas)
         assert eps > 0
         
-        device = potential_probs.device
+        self.device = device
+        potential_probs = potential_probs.to(device)
+        potential_mus = potential_mus.to(device)
+        potential_sigmas = potential_sigmas.to(device)
+        
         self.dim = potential_mus[0].shape[0]
         
         self.components_distirubtion = PotentialCategoricalDistribution(
@@ -161,7 +175,7 @@ def get_guassian_mixture_benchmark_sampler(input_or_target: str, dim: int, eps: 
                                            batch_size: int, device: str ="cpu", download: bool =False):
     assert input_or_target in ["input", "target"]
     assert dim in [2, 4, 8, 16, 32, 64, 128]
-    assert eps in [0.1, 1, 10]
+    assert eps in [0.01, 0.1, 1, 10]
     
     if download:
         download_gaussian_mixture_benchmark_files()
@@ -172,7 +186,7 @@ def get_guassian_mixture_benchmark_sampler(input_or_target: str, dim: int, eps: 
     mus = torch.load(os.path.join(benchmark_data_path, f"input_mus_dim_{dim}.torch"))
     sigmas = torch.load(os.path.join(benchmark_data_path, f"input_sigmas_dim_{dim}.torch"))
     
-    gm = GaussianMixture(probs, mus, sigmas)
+    gm = GaussianMixture(probs, mus, sigmas, device=device)
         
     if input_or_target == "input":
         return gm
@@ -181,7 +195,7 @@ def get_guassian_mixture_benchmark_sampler(input_or_target: str, dim: int, eps: 
         mus = torch.load(os.path.join(benchmark_data_path, f"potential_mus_dim_{dim}_eps_{eps}.torch"))
         sigmas = torch.load(os.path.join(benchmark_data_path, f"potential_sigmas_dim_{dim}_eps_{eps}.torch"))
         
-        conditional_plan = ConditionalPlan(probs, mus, sigmas, eps)
+        conditional_plan = ConditionalPlan(probs, mus, sigmas, eps, device=device)
         
         return OutputSampler(gm, conditional_plan)
     
@@ -189,7 +203,7 @@ def get_guassian_mixture_benchmark_sampler(input_or_target: str, dim: int, eps: 
 def get_guassian_mixture_benchmark_ground_truth_sampler(dim: int, eps: float, batch_size: int,
                                                         device: str ="cpu", download: bool =False):
     assert dim in [2, 4, 8, 16, 32, 64, 128]
-    assert eps in [0.1, 1, 10]
+    assert eps in [0.01, 0.1, 1, 10]
     
     if download:
         download_gaussian_mixture_benchmark_files()
@@ -200,13 +214,32 @@ def get_guassian_mixture_benchmark_ground_truth_sampler(dim: int, eps: float, ba
     mus = torch.load(os.path.join(benchmark_data_path, f"input_mus_dim_{dim}.torch"))
     sigmas = torch.load(os.path.join(benchmark_data_path, f"input_sigmas_dim_{dim}.torch"))
     
-    gm = GaussianMixture(probs, mus, sigmas)
+    gm = GaussianMixture(probs, mus, sigmas, device=device)
     
     probs = torch.load(os.path.join(benchmark_data_path, f"potential_probs_dim_{dim}_eps_{eps}.torch"))
     mus = torch.load(os.path.join(benchmark_data_path, f"potential_mus_dim_{dim}_eps_{eps}.torch"))
     sigmas = torch.load(os.path.join(benchmark_data_path, f"potential_sigmas_dim_{dim}_eps_{eps}.torch"))
 
-    conditional_plan = ConditionalPlan(probs, mus, sigmas, eps)
+    conditional_plan = ConditionalPlan(probs, mus, sigmas, eps, device=device)
         
     return PlanSampler(gm, conditional_plan)
+
+
+class LoaderFromSampler:
+    def __init__(self, sampler, batch_size, num_batches):
+        self.num_batches = num_batches
+        self.sampler = sampler
+        self.batch_size = batch_size
+        self.current_batch = 0
+    
+    def __iter__(self):
+        self.current_batch = 0
+        return self
+
+    def __next__(self):
+        if self.current_batch >= self.num_batches:
+            raise StopIteration
+            
+        self.current_batch += 1
+        return self.sampler.sample(self.batch_size)
     

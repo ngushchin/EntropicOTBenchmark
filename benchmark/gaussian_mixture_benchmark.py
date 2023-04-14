@@ -241,5 +241,6 @@ class LoaderFromSampler:
             raise StopIteration
             
         self.current_batch += 1
-        return self.sampler.sample(self.batch_size)
+        samples = self.sampler.sample(self.batch_size)
+        return samples, torch.zeros(self.batch_size)
     

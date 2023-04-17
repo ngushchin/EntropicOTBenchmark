@@ -145,7 +145,7 @@ def download_image_benchmark_files():
     
     urls = {
         "glow_model.pt": "https://drive.google.com/uc?id=14G8LtmF3QH5yYSYG0FzV6xjJxYuec1Ww",
-        "glow_sampler_generated_data.zip": "https://drive.google.com/uc?id=1GFxRJlnujy8A2AYaMSRxjeDWp748dc9m",
+        "glow_sampler_generated_data.zip": "https://drive.google.com/uc?id=1qF3gpoUba3AgZ164v5WCS7IZcejgsoQk",
     }
     
     for name, url in urls.items():

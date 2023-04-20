@@ -112,7 +112,10 @@ def calculate_gm_mmd(x, y, dim, eps, normalization_type, batch_size=1000):
                                   "indep_plan_rbf_distance_kernel",
                                   "identity_rbf_kernel", 
                                   "indentity_rbf_kernel_norm", 
-                                  "identity_distance_kernel"]
+                                  "identity_distance_kernel", 
+                                  "identity_plan_rbf_kernel",
+                                  "indentity_plan_rbf_kernel_norm",
+                                  "identity_plan_distance_kernel",]
     assert dim in [2, 4, 8, 16, 32, 64, 128]
     assert eps in [0.01, 0.1, 1, 10]
     

@@ -106,6 +106,10 @@ class ConditionalPlan:
         potential_mus = potential_mus.to(device)
         potential_sigmas = potential_sigmas.to(device)
         
+        self.potential_probs = potential_probs
+        self.potential_mus = potential_mus
+        self.potential_sigmas = potential_sigmas
+        
         self.dim = potential_mus[0].shape[0]
         
         self.components_distirubtion = PotentialCategoricalDistribution(

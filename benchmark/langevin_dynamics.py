@@ -10,8 +10,8 @@ from torch import nn
 from torch.autograd import grad as torch_grad
 from torchvision.utils import make_grid
 
-from src.model import Glow
-from src.train import calc_z_shapes
+from .glow_model import Glow
+from .glow_train import calc_z_shapes, sample_data
 # from collections.abc import Callable
 from typing import Callable
 import pdb

@@ -370,3 +370,4 @@ class Glow(nn.Module):
                 input = block.reverse(input, z_list[-(i + 1)], reconstruct=reconstruct)
 
         return input
+    

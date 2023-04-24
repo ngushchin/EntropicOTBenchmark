@@ -6,7 +6,7 @@ packages = {
 
 setup(
     name="eot_benchmark",
-    version='0.24',
+    version='0.25',
     author="Anonym",
     license="MIT",
     description="""""",

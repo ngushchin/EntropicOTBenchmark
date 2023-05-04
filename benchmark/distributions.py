@@ -40,20 +40,21 @@ class LoaderSampler(Sampler):
         self.loader = loader
         self.it = iter(self.loader)
         
-    def sample(self, size=None):
-        if size is None:
-            size = self.loader.batch_size
+    def sample(self, size=4):
+        samples = []
+        n_samples = 0
         
-        assert size <= self.loader.batch_size
-        try:
-            batch, _ = next(self.it)
-        except StopIteration:
-            self.it = iter(self.loader)
-            return self.sample(size)
-        if len(batch) < size:
-            return self.sample(size)
+        while n_samples < size:
+            try:
+                batch, _ = next(self.it)
+                samples.append(batch)
+                n_samples += batch.shape[0]
+            except StopIteration:
+                self.it = iter(self.loader)
             
-        return batch[:size].to(self.device)
+        samples = torch.cat(samples, dim=0)
+            
+        return samples[:size].to(self.device)
     
     
 class RotatedGaussisnLoaderSamplerWithDensity(LoaderSampler):

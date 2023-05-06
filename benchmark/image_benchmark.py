@@ -2,6 +2,7 @@ import gdown
 import os
 import torch
 import numpy as np
+import json
 
 from matplotlib import pyplot as plt
 
@@ -179,13 +180,13 @@ class ImagePlanSampler:
 def download_image_benchmark_files():    
     path = get_data_home()
     urls = {
-        "image_benchmark_data.zip": "https://drive.google.com/uc?id=1HNXbrkozARbz4r8fdFbjvPw8R74n1oiY",
+        "image_benchmark.zip": "https://drive.google.com/uc?id=1QDHxJIYjHnpoJMq1IBwap5SlWJtyMjIi",
     }
         
     for name, url in urls.items():
         gdown.download(url, os.path.join(path, f"{name}"), quiet=False)
         
-    with ZipFile(os.path.join(path, "image_benchmark_data.zip"), 'r') as zip_ref:
+    with ZipFile(os.path.join(path, "image_benchmark.zip"), 'r') as zip_ref:
         zip_ref.extractall(path)
 
 
@@ -281,3 +282,11 @@ class ImageBenchmark:
                                                      samples_device=samples_device, glow_device=glow_device)
         self.Y_sampler = get_image_benchmark_sampler("target", eps=eps, batch_size=batch_size,
                                                  samples_device=samples_device, glow_device=glow_device)
+        
+        stats_filename = os.path.join(get_data_home(), "image_benchmark", "Image_Y_test_stats.json")
+        with open(stats_filename, 'r') as fp:
+            data_stats = json.load(fp)
+            Y_test_inception_mu, Y_test_inception_sigma = data_stats['mu'], data_stats['sigma']
+        
+        self.Y_test_inception_mu = Y_test_inception_mu
+        self.Y_test_inception_sigma = Y_test_inception_sigma

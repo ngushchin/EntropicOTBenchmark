@@ -262,16 +262,11 @@ def load_output_test_image_sampler(eps, batch_size=64, shuffle=True, device='cud
     return sampler
 
 
-# def load_pairs_test_image_sampler(eps, batch_size=64, shuffle=True, device='cuda', num_workers=8):
-#     X = load_input_test_images(eps)
-#     Y = load_output_test_images()
-#     dataset = TensorDataset(X, Y)
-#     sampler = LoaderSampler(DataLoader(dataset, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size), device, sample_Y=True)
-    
-#     return sampler
-
 class ImageBenchmark:
-    def __init__(self, batch_size, eps, glow_device, samples_device, download=False, num_workers=8):        
+    def __init__(self, batch_size, eps, glow_device, samples_device, download=False, num_workers=8):   
+        if download:
+            download_image_benchmark_files()
+        
         self.X_test_sampler = load_input_test_image_sampler(eps=eps, batch_size=batch_size, device=samples_device, num_workers=num_workers)
         self.Y_test_sampler = load_output_test_image_sampler(eps=eps, batch_size=batch_size, device=samples_device, num_workers=num_workers)
 

@@ -158,22 +158,28 @@ class ImageConditionalPlan:
 
     
 class ImageOutputSampler:
-    def __init__(self, glow_sampler, conditional_plan):
+    def __init__(self, glow_sampler, conditional_plan, batch_size=1):
         self.glow_sampler = glow_sampler
         self.conditional_plan = conditional_plan
+        self.batch_size = batch_size
         
-    def sample(self, n_samples: int =1):
+    def sample(self, n_samples = None):
+        if n_samples is None:
+            n_samples = self.batch_size
         return self.conditional_plan.sample(self.glow_sampler.sample(n_samples))
 
     
 class ImagePlanSampler:
-    def __init__(self, gm, conditional_plan):
+    def __init__(self, glow_sampler, conditional_plan, batch_size=1):
         self.glow_sampler = glow_sampler
         self.conditional_plan = conditional_plan
+        self.batch_size = batch_size
         
-    def sample(self, n_samples: int =1):
-        input_samples = self.glow_sampler.sample(n_samples)
-        output_samples = self.conditional_plan.sample(input_samples)
+    def sample(self, n_samples = None):
+        if n_samples is None:
+            n_samples = self.batch_size
+        output_samples = self.glow_sampler.sample(n_samples)
+        input_samples = self.conditional_plan.sample(output_samples)
         return input_samples, output_samples
 
 
@@ -212,7 +218,7 @@ def get_image_benchmark_sampler(input_or_target: str, eps: float,
         
         conditional_plan = ImageConditionalPlan(probs, mus, sigmas, eps, device=samples_device)
         
-        return ImageOutputSampler(glow_sampler, conditional_plan)
+        return ImageOutputSampler(glow_sampler, conditional_plan, batch_size=batch_size)
     
 
 def get_image_benchmark_ground_truth_sampler(eps: float, batch_size: int, glow_device: str ="cpu",
@@ -220,6 +226,7 @@ def get_image_benchmark_ground_truth_sampler(eps: float, batch_size: int, glow_d
     if download:
         download_image_benchmark_files()
     
+    benchmark_data_path = os.path.join(get_data_home(), "image_benchmark")
     glow_checkpoint_path = os.path.join(get_data_home(), "image_benchmark", "glow_model.pt")
     glow_sampler = GlowSampler(glow_checkpoint_path, glow_device, samples_device)
     
@@ -227,9 +234,9 @@ def get_image_benchmark_ground_truth_sampler(eps: float, batch_size: int, glow_d
     mus = torch.load(os.path.join(benchmark_data_path, "potentials", f"image_potential_mus_eps_{eps}.torch"))
     sigmas = torch.load(os.path.join(benchmark_data_path, "potentials", f"image_potential_sigmas_eps_{eps}.torch"))
 
-    conditional_plan = ConditionalPlan(probs, mus, sigmas, eps, device=device)
+    conditional_plan = ImageConditionalPlan(probs, mus, sigmas, eps, device=samples_device)
         
-    return PlanSampler(glow_sampler, conditional_plan)
+    return ImagePlanSampler(glow_sampler, conditional_plan, batch_size=batch_size)
 
 
 def load_input_test_images(eps):

@@ -1,10 +1,15 @@
 import os
 
 import torch
+from torch.nn.functional import softmax
 import numpy as np
 # from .tools import freeze
 from scipy.linalg import sqrtm
 from .auxiliary import get_data_home
+
+from .gaussian_mixture_benchmark import (
+    get_guassian_mixture_benchmark_ground_truth_sampler, 
+)
 
 import gc
 
@@ -37,6 +42,41 @@ def compute_BW_by_gt_samples(model_samples, true_samples):
     true_samples_mu = true_samples.mean(axis=0)
         
     return compute_BW_with_gt_stats(model_samples, true_samples_mu, true_samples_covariance)
+
+
+def calculate_cond_bw(input_samples, predictions, eps, dim):
+    ground_truth_plan_sampler = get_guassian_mixture_benchmark_ground_truth_sampler(dim=dim, eps=eps,
+                                                                                batch_size=32, 
+                                                                                device="cpu",
+                                                                                download=False)
+    input_samples = input_samples.detach().cpu()
+    predictions = predictions.detach().cpu()
+    
+    conditional_plan = ground_truth_plan_sampler.conditional_plan
+    cov_matrices = torch.stack([distr.covariance_matrix for distr in conditional_plan.gaussians_distributions], dim=0)
+    locs_static = torch.stack([distr.loc for distr in conditional_plan.gaussians_distributions], dim=0)
+    
+    cond_bws = []
+    
+    for input_sample, predict in zip(input_samples, predictions):
+        X = input_sample[None, :]
+        locs_x = torch.stack([(weight@X.T).T[0] for weight in conditional_plan.plan_mu_weights], dim=0)
+        locs = locs_static + locs_x
+
+        probs = softmax(conditional_plan.components_distirubtion.calculate_log_probs(X), dim=1)[0]
+
+        mean_covariance = (probs[:, None, None]*cov_matrices).sum(dim=0)
+        total_mean = (probs[:, None]*locs).sum(dim=0)
+        covariance_of_means = ((locs - total_mean[None, :]).T)@(probs[:, None]*(locs - total_mean[None, :]))
+
+        total_covariance = mean_covariance + covariance_of_means
+        
+        cond_bws.append(compute_BW_with_gt_stats(predict.numpy(), total_mean.numpy(), total_covariance.numpy()))
+        
+    cond_bws = np.mean(cond_bws)
+    norm = np.load(os.path.join(get_data_home(), "gaussian_mixture_benchmark_data", "y_vars", f"y_var_dim_{dim}_eps_{eps}.npy"))
+        
+    return 100*cond_bws/norm
 
 
 def compute_BW_UVP_with_gt_stats(model_samples, true_samples_mu, true_samples_covariance):

@@ -82,11 +82,18 @@ class PotentialCategoricalDistribution:
         ]
         self.categorical_distribution = ConditionalCategoricalDistribution()
     
-    def sample(self, x) -> torch.tensor:
+    
+    def calculate_log_probs(self, x):
         log_probs = [
             log_prob + distribution.log_prob(x) for log_prob, distribution in zip(self.log_probs, self.potential_gaussians_distributions)
         ]
         log_probs = torch.stack(log_probs, dim=1)
+        
+        return log_probs
+    
+    
+    def sample(self, x) -> torch.tensor:
+        log_probs = self.calculate_log_probs(x)
         
         return self.categorical_distribution.sample(log_probs)
     
@@ -227,6 +234,11 @@ def get_guassian_mixture_benchmark_ground_truth_sampler(dim: int, eps: float, ba
     conditional_plan = ConditionalPlan(probs, mus, sigmas, eps, device=device)
         
     return PlanSampler(gm, conditional_plan)
+
+
+def get_test_input_samples(dim, device="cpu"):
+    benchmark_data_path = os.path.join(get_data_home(), "gaussian_mixture_benchmark_data")
+    return torch.load(os.path.join(benchmark_data_path, "test_inputs", f"test_data_dim_{dim}.torch")).to(device)
 
 
 class LoaderFromSampler:

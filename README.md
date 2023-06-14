@@ -68,7 +68,7 @@ GT_sampler = benchmark.GT_sampler
 
 <p align="center"><img src="pics/images_benchmark.png" width="800" /></p>
 
-Test image datasets (for cFID, sets of "y" and 5k "x" per each "y") are available via the [following link](https://disk.yandex.ru/d/iylrmxv5kHzQMQ). To get the test set for standard FID, use the built-in function which automatically downloads the test set.
+Test image datasets (for cFID, sets of "y" and 5k "x" per each "y") are available via the [following link](https://disk.yandex.ru/d/iylrmxv5kHzQMQ). These are int8 tensors, use torch.load. To get the test set for standard FID, use the built-in function which automatically downloads the test set.
 
 ```python
 X_test_sampler = benchmark.X_test_sampler

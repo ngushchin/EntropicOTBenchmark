@@ -22,6 +22,7 @@ We provide several notebooks illustrating the usage of our benchmark.
 And we also provide notebooks to quickly plot some images from the paper.
 - `notebooks/plot_mixtures_results_eot.ipynb` -- plotting the qualitative results (PCA projections) of EOT methods on our mixtures benchmark;
 - `notebooks/plot_mixtures_results_sb.ipynb` -- plotting the quantitative results (KL/RKL) of SB methods on our mixtures pairs;
+- `benchmark_construction_examples` -- several examples of how to construct benchmark pairs from data.
 
 ## Loading Benchmark Pairs For Mixtures
 ```python

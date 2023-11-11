@@ -10,6 +10,7 @@ The repository contains a set of continuous benchmark distributions for testing 
 ## Pre-requisites
 ```console
 pip install -r requirements.txt
+python install setup.py
 ```
 
 ## Repository structure

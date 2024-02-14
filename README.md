@@ -1,6 +1,6 @@
 # Continuous Entropic OT (Schrodinger Bridge) Benchmark
 
-This is the official Python implementation of the pre-print *Building the Bridge of Schrödinger:
+This is the official Python implementation of the NeurIPS 2023 paper *Building the Bridge of Schrödinger:
 A Continuous Entropic Optimal Transport Benchmark* by Nikita Gushchin, Alexander Kolesov, Petr Mokrov, Polina Karpikova, Andrey Spiridonov, Evgeny Burnaev, Alexander Korotin.
 
 The repository contains a set of continuous benchmark distributions for testing EOT/SB solvers for the quadratic cost.

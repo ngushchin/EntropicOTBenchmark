@@ -7,6 +7,19 @@ The repository contains a set of continuous benchmark distributions for testing 
 
 <p align="center"><img src="pics/schrodinger_bridge.png" width="400" /></p>
 
+## Citation
+
+If you find this repository or the ideas presented in our paper useful, please consider citing our paper.
+
+```
+@inproceedings{gushchin2023building,
+  title={Building the Bridge of Schr$\backslash$" odinger: A Continuous Entropic Optimal Transport Benchmark},
+  author={Gushchin, Nikita and Kolesov, Alexander and Mokrov, Petr and Karpikova, Polina and Spiridonov, Andrey and Burnaev, Evgeny and Korotin, Alexander},
+  booktitle={Thirty-seventh Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
+  year={2023}
+}
+```
+
 ## Pre-requisites
 ```console
 pip install -r requirements.txt

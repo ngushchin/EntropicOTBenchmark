@@ -1,7 +1,7 @@
 # Continuous Entropic OT (Schrodinger Bridge) Benchmark
 
 This is the official Python implementation of the NeurIPS 2023 paper *Building the Bridge of Schrödinger:
-A Continuous Entropic Optimal Transport Benchmark* by Nikita Gushchin, Alexander Kolesov, Petr Mokrov, Polina Karpikova, Andrey Spiridonov, Evgeny Burnaev, Alexander Korotin.
+A Continuous Entropic Optimal Transport Benchmark* ([https://arxiv.org/abs/2306.10161](https://arxiv.org/abs/2306.10161)) by [Nikita Gushchin](https://scholar.google.com/citations?user=UaRTbNoAAAAJ), [Alexander Kolesov](https://scholar.google.com/citations?user=WyAI_wUAAAAJ), Petr Mokrov, [Polina Karpikova](https://scholar.google.com/citations?user=2o1dSLkAAAAJ), Andrey Spiridonov, [Evgeny Burnaev](https://scholar.google.com/citations?user=pCRdcOwAAAAJ), [Alexander Korotin](https://scholar.google.com/citations?user=1rIIvjAAAAAJ).
 
 The repository contains a set of continuous benchmark distributions for testing EOT/SB solvers for the quadratic cost.
 
@@ -94,3 +94,4 @@ Y_test_sampler = benchmark.Y_test_sampler
 - [Weights & Biases](https://wandb.ai) developer tools for machine learning;
 - [CelebA page](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html) with faces dataset and [this page](https://www.kaggle.com/jessicali9530/celeba-dataset) with its aligned 64x64 version;
 - [pytorch-fid repo](https://github.com/mseitzer/pytorch-fid) to compute [FID](https://arxiv.org/abs/1706.08500) score;
+

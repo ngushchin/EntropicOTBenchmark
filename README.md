@@ -23,7 +23,7 @@ If you find this repository or the ideas presented in our paper useful, please c
 ## Pre-requisites
 ```console
 pip install -r requirements.txt
-python install setup.py
+python setup.py install
 ```
 
 ## Repository structure
